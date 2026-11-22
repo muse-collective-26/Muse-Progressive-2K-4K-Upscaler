@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.safetensors
+*.pt
+*.pth
+*.mp4
+*.wav
+.env

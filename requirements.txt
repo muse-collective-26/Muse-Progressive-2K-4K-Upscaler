@@ -1,0 +1,1 @@
+# Uses the host ComfyUI environment. Install the node dependencies listed in README.md.

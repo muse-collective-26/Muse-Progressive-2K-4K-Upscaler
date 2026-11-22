@@ -1,0 +1,26 @@
+{
+  "default_both_outputs": {
+    "status": "success",
+    "prompt_id": "6e264eea-1ea8-4d68-bd43-363917ea1896",
+    "outputs": {
+      "3": {
+        "kind": "video",
+        "width": 2528,
+        "height": 1440,
+        "duration": 0.9166666666666666,
+        "fps": 24.0,
+        "frame_count": 22
+      },
+      "4": {
+        "kind": "video",
+        "width": 3840,
+        "height": 2208,
+        "duration": 0.9166666666666666,
+        "fps": 24.0,
+        "frame_count": 22
+      }
+    }
+  },
+  "automated_checks": "5 passed: modes, presets, output trimming, 244-frame section routing, exact sizing",
+  "long_clip_gpu_test": "Stopped before completion; automatic routing passed 244-frame mock test, but full long-clip render is not validated."
+}
