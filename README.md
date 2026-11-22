@@ -89,3 +89,8 @@ Start the test server with `--disable-comfy-compiler`: a prior native model-patc
 Repository: https://github.com/muse-collective-26/Muse-Progressive-2K-4K-Upscaler. Share that URL and this README in Skool. This local package does not publish itself or upload source clips, models or credentials. The example workflow refers to a local demo filename; community users select their own video.
 
 This is a community **beta**, not a newly trained super-resolution model or a claim of recovered ground-truth detail. Check identity, motion, skin texture, fine-pattern stability and tile joins on your own material.
+
+## In-node preview
+
+A preview pane below the controls shows the source, then completed 2K and 4K frames. A live status line reports model loading, refinement, tile number and decoding. It is a completed-frame preview with live stage progress, not a decoded image at every diffusion step. Preview failures do not stop the render.
+

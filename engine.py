@@ -39,6 +39,8 @@ class Detail4K:
 
     def refine(self,stage,detail_amount,overlap_pixels,light=False):
         start=time.perf_counter()
+        notify=stage.get('progress_callback',lambda *args:None)
+        notify('Preparing 4K latent and reference')
         models=stage['models']
         fw,fh=stage['final_size']
         enlarged=(call('VAEEncode',pixels=resize_pixels(stage['reference_frames'],fw,fh),vae=models['vae'])[0]
@@ -71,6 +73,7 @@ class Detail4K:
         progress=comfy.utils.ProgressBar(4)
         for i,box in enumerate(boxes):
             mm.throw_exception_if_processing_interrupted()
+            notify(f'Refining 4K tile {i+1}/4')
             began=time.perf_counter()
             x0,y0,x1,y1=box
             alpha=blend_mask(box,i,boxes)
@@ -98,6 +101,7 @@ class Detail4K:
             LOG.warning('[%s TILE %s/4] DONE %.1fs',tag,i+1,elapsed)
             progress.update_absolute(i+1)
             del sampled,refined,layered,delta,band,guider,cond,tile,before
+        notify('Decoding 4K output')
         frames=decode({'samples':canvas},models['vae'])
         report={'size':[fw,fh],'frames':len(frames),'detail_amount':None if light else detail_amount,'overlap_pixels':overlap_pixels,
                 'tiles':reports,'seconds_including_enlarge_decode':round(time.perf_counter()-start,3),
