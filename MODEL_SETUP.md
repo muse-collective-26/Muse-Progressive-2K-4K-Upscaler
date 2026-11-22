@@ -1,4 +1,4 @@
-# Models and installation — News Progressive 2K / 4K
+# Models and installation — Muse Progressive 2K / 4K
 
 **Default recipe: standard Regenerate, Detailed 0.80. No IC LoRA or HyperFlow required.**
 
@@ -18,12 +18,12 @@ The audio VAE is required for H3's silent internal audio latent. Your original a
 
 Install these under `ComfyUI/custom_nodes/` and follow each repository's requirements instructions:
 
-- [News Progressive 2K 4K Upscaler](https://github.com/muse-collective-26/News-Progressive-2K-4K-Upscaler)
+- [Muse Progressive 2K 4K Upscaler](https://github.com/muse-collective-26/Muse-Progressive-2K-4K-Upscaler)
 - [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes)
 - [ComfyUI-Open-H3-Regenerate](https://github.com/rdh9616/ComfyUI-Open-H3-Regenerate)
 - [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite)
 
-Use current [ComfyUI](https://github.com/Comfy-Org/ComfyUI) with native MiniMax H3 and Comfy Kitchen/SOL attention. Install FFmpeg for video loading/export. Restart after installing nodes or models. Cloning the News repository alone does not download model weights or install the other node packages.
+Use current [ComfyUI](https://github.com/Comfy-Org/ComfyUI) with native MiniMax H3 and Comfy Kitchen/SOL attention. Install FFmpeg for video loading/export. Restart after installing nodes or models. Cloning the Muse repository alone does not download model weights or install the other node packages.
 
 ## Use
 

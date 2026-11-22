@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import unittest
 import tempfile
+import json
 from unittest.mock import patch
 
 sys.path.insert(0, os.environ['COMFYUI_PATH'])
@@ -80,6 +81,20 @@ class ModesTest(unittest.TestCase):
 
     def test_tested_resolution(self):
         self.assertEqual(u.output_sizes(1344, 768), ((2528, 1440), (3840, 2208)))
+
+    def test_workflow_widgets_include_seed_control_in_the_right_slot(self):
+        graph = json.loads((root/'example_workflows'/'Muse Progressive Upscaler.json').read_text())
+        node = next(n for n in graph['nodes'] if n['id'] == 2)
+        values = node['widgets_values']
+        self.assertEqual(len(values), 10)
+        self.assertEqual(values[3], 'fixed')
+        self.assertIn('ref2va_pruned', values[4])
+        self.assertIn('qwen3vl', values[5])
+        self.assertIn('video_vae', values[6])
+        self.assertIn('audio_vae', values[7])
+        self.assertIn('regenerate_2k_lora', values[8])
+        self.assertEqual(values[9], u.DEFAULT_PROMPT)
+        self.assertFalse(any('News' in n.get('title', '') or '\u00c2' in n.get('title', '') for n in graph['nodes']))
 
 
 if __name__ == '__main__':

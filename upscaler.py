@@ -22,18 +22,7 @@ PRESETS = {
     'Balanced · 0.60': (0.6, 0.36, 0.),
     'Soft · 0.35': (0.35, 0.18, 0.),
 }
-DEFAULT_PROMPT = '''subject_definitions:
-<Subject 1> denotes the people and visible content in <Video 1>. <Video 1> is the source clip and provides the identity, appearance, clothing, expressions, movements, framing, lighting and background.
-summary:
-Restore the source clip at higher resolution while preserving its appearance and motion.
-retention_analysis:
-Preserve the composition and temporal structure of <Video 1>. Preserve existing skin tone, skin texture and distinguishing marks. Do not introduce freckles, new spots, speckled pores or mottled skin. Keep the same face shapes, eyes, expressions, hair and clothing.
-detailed_description:
-Throughout the clip, reproduce the same subjects and movement shown in <Video 1>. Refine existing hair strands, eyelashes, clothing and object textures without redesigning them. Skin remains natural and consistent with the source, with subtle texture rather than a uniform layer of dots. Preserve original lighting and colour. Maintain stable features and texture between frames.
-overall_soundscape:
-No new sounds; original audio is retained separately.
-non_diegetic_music:
-No added music.'''
+DEFAULT_PROMPT = 'Preserve the original subjects, identity, expressions, movement, lighting and colour. Refine existing hair, eyelashes, clothing and object detail. Keep skin texture consistent with the source; do not add freckles, new spots or uniform speckled pores.'
 
 
 def output_sizes(width, height):
@@ -54,7 +43,7 @@ class MuseProgressiveUpscaler:
             'images': ('IMAGE',),
             'output': (['Both', '2K only', '4K only'], {'default': 'Both'}),
             'strength': (list(PRESETS), {'default': 'Detailed · 0.80 (default)'}),
-            'seed': ('INT', {'default': 42, 'min': 0, 'max': 0xffffffffffffffff}),
+            'seed': ('INT', {'default': 42, 'min': 0, 'max': 0xffffffffffffffff, 'control_after_generate': True}),
             'base_model': model_list('diffusion_models', 'minimax_h3_ref2va_pruned_int8_convrot.safetensors'),
             'text_encoder': model_list('text_encoders', 'qwen3vl_32b_minimax_h3_int8_convrot.safetensors'),
             'video_vae': model_list('vae', 'minimax_h3_video_vae_fp16.safetensors'),

@@ -1,5 +1,5 @@
 [project]
-name = "news-progressive-2k-4k-upscaler"
+name = "muse-progressive-2k-4k-upscaler"
 version = "0.1.0"
 description = "Single-node source-preserving H3 2K and tiled 4K video refinement"
 requires-python = ">=3.10"

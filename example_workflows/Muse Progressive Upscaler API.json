@@ -23,7 +23,7 @@
       "video_vae": "minimax_h3_video_vae_fp16.safetensors",
       "audio_vae": "minimax_h3_audio_vae_fp32.safetensors",
       "regenerate_lora": "open_h3_regenerate_2k_lora.safetensors",
-      "preservation_prompt": "subject_definitions:\n<Subject 1> denotes the people and visible content in <Video 1>. <Video 1> is the source clip and provides the identity, appearance, clothing, expressions, movements, framing, lighting and background.\nsummary:\nRestore the source clip at higher resolution while preserving its appearance and motion.\nretention_analysis:\nPreserve the composition and temporal structure of <Video 1>. Preserve existing skin tone, skin texture and distinguishing marks. Do not introduce freckles, new spots, speckled pores or mottled skin. Keep the same face shapes, eyes, expressions, hair and clothing.\ndetailed_description:\nThroughout the clip, reproduce the same subjects and movement shown in <Video 1>. Refine existing hair strands, eyelashes, clothing and object textures without redesigning them. Skin remains natural and consistent with the source, with subtle texture rather than a uniform layer of dots. Preserve original lighting and colour. Maintain stable features and texture between frames.\noverall_soundscape:\nNo new sounds; original audio is retained separately.\nnon_diegetic_music:\nNo added music.",
+      "preservation_prompt": "Preserve the original subjects, identity, expressions, movement, lighting and colour. Refine existing hair, eyelashes, clothing and object detail. Keep skin texture consistent with the source; do not add freckles, new spots or uniform speckled pores.",
       "images": [
         "1",
         0

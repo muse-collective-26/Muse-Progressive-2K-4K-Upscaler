@@ -1,4 +1,4 @@
-# News Progressive 2K 4K Upscaler
+# Muse Progressive 2K 4K Upscaler
 
 One ComfyUI node: video frames in, 2K and/or tiled 4K frames out.
 
@@ -9,7 +9,7 @@ One ComfyUI node: video frames in, 2K and/or tiled 4K frames out.
 From your `ComfyUI/custom_nodes` directory:
 
 ```bash
-git clone https://github.com/muse-collective-26/News-Progressive-2K-4K-Upscaler.git
+git clone https://github.com/muse-collective-26/Muse-Progressive-2K-4K-Upscaler.git
 ```
 
 Cloning installs this node's source only. Install the four listed dependencies (ComfyUI itself plus the three custom-node packages), download the five required models, and restart ComfyUI. ComfyUI Manager can install KJNodes, VideoHelperSuite and Open-H3-Regenerate, or clone their linked repositories into `custom_nodes` and follow their requirements instructions. Use ComfyUI's Python environment for any pip commands. No weights are downloaded automatically.
@@ -17,7 +17,7 @@ Cloning installs this node's source only. Install the four listed dependencies (
 ## Quick start
 
 1. Install the dependencies and models below.
-2. Place this folder in `ComfyUI/custom_nodes/News-Progressive-2K-4K-Upscaler` and restart ComfyUI.
+2. Place this folder in `ComfyUI/custom_nodes/Muse-Progressive-2K-4K-Upscaler` and restart ComfyUI.
 3. Open `example_workflows/Muse Progressive Upscaler.json`.
 4. Choose a video in **Load Video**. The example loads the whole clip (`frame_load_cap = 0`). For a quick test, temporarily set a 22-frame cap in the loader.
 5. Select **2K only**, **4K only**, or **Both**, then Queue.
@@ -86,6 +86,6 @@ Start the test server with `--disable-comfy-compiler`: a prior native model-patc
 
 ## Sharing
 
-Repository: https://github.com/muse-collective-26/News-Progressive-2K-4K-Upscaler. Share that URL and this README in Skool. This local package does not publish itself or upload source clips, models or credentials. The example workflow refers to a local demo filename; community users select their own video.
+Repository: https://github.com/muse-collective-26/Muse-Progressive-2K-4K-Upscaler. Share that URL and this README in Skool. This local package does not publish itself or upload source clips, models or credentials. The example workflow refers to a local demo filename; community users select their own video.
 
 This is a community **beta**, not a newly trained super-resolution model or a claim of recovered ground-truth detail. Check identity, motion, skin texture, fine-pattern stability and tile joins on your own material.
