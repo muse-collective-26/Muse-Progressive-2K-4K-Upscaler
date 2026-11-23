@@ -2,7 +2,7 @@
   "1": {
     "class_type": "VHS_LoadVideo",
     "inputs": {
-      "video": "chunk_0009_preview.mp4",
+      "video": "",
       "force_rate": 24,
       "custom_width": 0,
       "custom_height": 0,
@@ -27,7 +27,9 @@
       "images": [
         "1",
         0
-      ]
+      ],
+      "strength_4K": "Balanced \u00b7 0.60",
+      "colour_lock": true
     }
   },
   "3": {
