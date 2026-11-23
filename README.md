@@ -2,7 +2,7 @@
 
 One ComfyUI node: video frames in, 2K and/or tiled 4K frames out.
 
-**Default: Detailed 0.80, standard Open-H3-Regenerate, two Euler steps.** This is the branch Andy selected after comparing actual renders. This package does **not** use the IC LoRA or HyperFlow. It does not require Muse Director or Muse Studio.
+**Default: Balanced 0.60 for both stages, standard Open-H3-Regenerate, two Euler steps, colour lock on.** Detailed 0.80 is still available; at 0.80 on both stages faces (eye colour, make-up) and overall colour were noticeably redrawn, so the default was lowered in 0.2.0. This package does **not** use the IC LoRA or HyperFlow. It does not require Muse Director or Muse Studio.
 
 ## Installation
 
@@ -28,11 +28,20 @@ In 2K-only mode the 4K stage is never executed. In 4K-only mode the 2K intermedi
 
 ## Strength
 
-| Preset | Two-step sigma schedule, at both stages | Status |
+| Preset | Two-step sigma schedule | Status |
 |---|---|---|
-| **Detailed 0.80 — default** | `0.8 → 0.49411765 → 0` | Selected after the 56-frame comparison and tiled 4K test |
-| Balanced 0.60 | `0.6 → 0.36 → 0` | Intermediate option; no equivalent full quality comparison yet |
+| Detailed 0.80 | `0.8 → 0.49411765 → 0` | Most detail; redraws faces and colour noticeably |
+| **Balanced 0.60 — default** | `0.6 → 0.36 → 0` | Default since 0.2.0: faithful, still sharper than the source |
 | Soft 0.35 | `0.35 → 0.18 → 0` | More restrained; may add little detail |
+
+**strength** sets the 2K stage. **strength_4K** sets the 4K stage on its own (default Balanced 0.60; *Same as 2K* repeats
+the 2K choice). Before 0.2.0 the 4K stage always reused the 2K strength, so a 0.80 run redrew the picture twice.
+
+**colour_lock** (default on): after each stage the broad colour and brightness are pulled back to the source (blocks of
+about 32 px); finer detail is untouched. On the test clip this cut the colour drift from about 7-8 to under 1 grey level
+with no change in fine detail.
+
+These sigmas are applied exactly (no scheduler or model shift on top).
 
 Higher strength permits more reconstruction and can change faces or texture. The preservation prompt asks for source appearance, expression, movement and skin texture to remain consistent; it is guidance, not a hard constraint. The advanced model selectors and editable prompt live inside the same node, with working filenames preselected.
 

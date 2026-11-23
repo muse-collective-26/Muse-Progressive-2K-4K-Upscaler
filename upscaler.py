@@ -14,7 +14,7 @@ import comfy.samplers
 import folder_paths
 import nodes
 from comfy_execution.graph import ExecutionBlocker
-from .engine import call, decode, resize_pixels, Light4K
+from .engine import call, decode, resize_pixels, Light4K, colour_lock
 
 LOG = logging.getLogger(__name__)
 PRESETS = {
@@ -42,7 +42,7 @@ class MuseProgressiveUpscaler:
         return {'hidden': {'unique_id': 'UNIQUE_ID'}, 'required': {
             'images': ('IMAGE',),
             'output': (['Both', '2K only', '4K only'], {'default': 'Both'}),
-            'strength': (list(PRESETS), {'default': 'Detailed · 0.80 (default)'}),
+            'strength': (list(PRESETS), {'default': 'Balanced · 0.60'}),   # [2026-11-22] Andy: less face redraw by default
             'seed': ('INT', {'default': 42, 'min': 0, 'max': 0xffffffffffffffff, 'control_after_generate': True}),
             'base_model': model_list('diffusion_models', 'minimax_h3_ref2va_pruned_int8_convrot.safetensors'),
             'text_encoder': model_list('text_encoders', 'qwen3vl_32b_minimax_h3_int8_convrot.safetensors'),
@@ -50,6 +50,11 @@ class MuseProgressiveUpscaler:
             'audio_vae': model_list('vae', 'minimax_h3_audio_vae_fp32.safetensors'),
             'regenerate_lora': model_list('loras', 'open_h3_regenerate_2k_lora.safetensors'),
             'preservation_prompt': ('STRING', {'default': DEFAULT_PROMPT, 'multiline': True}),
+            # [2026-11-22] Andy: appended at the end so saved workflows keep their values.
+            'strength_4K': (['Same as 2K'] + list(PRESETS), {'default': 'Balanced · 0.60',
+                'tooltip': 'How hard the 4K stage redraws the 2K result. 0.60 keeps good 4K detail with less face change; 0.80 = most detail, most change; 0.35 = gentle sharpen.'}),
+            'colour_lock': ('BOOLEAN', {'default': True,
+                'tooltip': 'After each stage, pull the overall colour and brightness back to the source video. Only broad colour is corrected; fine detail is kept.'}),
         }}
 
     RETURN_TYPES = ('IMAGE', 'IMAGE', 'STRING')
@@ -101,13 +106,14 @@ class MuseProgressiveUpscaler:
                 'audio_vae': call('VAELoader', vae_name=audio_vae)[0]}
 
     def run(self, images, output, strength, seed, base_model, text_encoder, video_vae,
-            audio_vae, regenerate_lora, preservation_prompt, unique_id=None):
+            audio_vae, regenerate_lora, preservation_prompt, strength_4K='Same as 2K', colour_lock=False, unique_id=None):
         notify = lambda stage, frames=None: self._preview(unique_id, stage, frames)
         notify("Starting - source preview", images)
         count = len(images)
         if count <= 124:
             return self._run_chunk(images, output, strength, seed, base_model, text_encoder,
-                                   video_vae, audio_vae, regenerate_lora, preservation_prompt, notify=notify)
+                                   video_vae, audio_vae, regenerate_lora, preservation_prompt, notify=notify,
+                                   strength_4K=strength_4K, lock=colour_lock)
         # Bound GPU work internally without imposing a user-facing clip-length cap.
         # Five inherited frames blend each section into its predecessor. Long output
         # buffers are file-backed, avoiding repeated full-length torch.cat copies.
@@ -119,7 +125,7 @@ class MuseProgressiveUpscaler:
         while start < count:
             end = min(start + 124, count)
             result = self._run_chunk(images[start:end], output, strength, seed, base_model,
-                text_encoder, video_vae, audio_vae, regenerate_lora, preservation_prompt, models=models, notify=lambda stage, frames=None: notify(f"Frames {start+1}-{end}/{count}: {stage}", frames))
+                text_encoder, video_vae, audio_vae, regenerate_lora, preservation_prompt, models=models, strength_4K=strength_4K, lock=colour_lock, notify=lambda stage, frames=None: notify(f"Frames {start+1}-{end}/{count}: {stage}", frames))
             reports.append(json.loads(result[2]))
             for slot in (0, 1):
                 frames = result[slot]
@@ -158,7 +164,8 @@ class MuseProgressiveUpscaler:
         return (*values, json.dumps(report, indent=2))
 
     def _run_chunk(self, images, output, strength, seed, base_model, text_encoder, video_vae,
-                   audio_vae, regenerate_lora, preservation_prompt, models=None, notify=None):
+                   audio_vae, regenerate_lora, preservation_prompt, models=None, notify=None,
+                   strength_4K='Same as 2K', lock=False):
         started = time.perf_counter()
         count, height, width, channels = images.shape
         if count < 1:
@@ -174,9 +181,10 @@ class MuseProgressiveUpscaler:
         source = images[..., :3].cpu()
         if padded_count > count:
             source = torch.cat((source, source[-1:].expand(padded_count-count, -1, -1, -1)), dim=0)
-        pw, ph = math.ceil(width/32)*32, math.ceil(height/32)*32
-        source = F.pad(source.movedim(-1, 1), (0, pw-width, 0, ph-height), mode='replicate').movedim(1, -1)
-        LOG.warning('[MUSE UPSCALER] Standard Regenerate; preset %s; %s frames; %s -> %s; output %s', strength, count, base_size, final_size, output)
+        # [2026-11-22] No edge padding: it was stretched into the 2K frame (912 wide -> padded 928 -> squeezed ~1.8% sideways,
+        # with a smeared strip on the right/bottom). The VAE input is already resized to the 32-aligned 2K size, and the H3
+        # reference node sizes its reference video itself.
+        LOG.warning('[MUSE UPSCALER] Standard Regenerate; 2K %s, 4K %s, colour lock %s; %s frames; %s -> %s; output %s', strength, strength_4K, lock, count, base_size, final_size, output)
         notify = notify or (lambda *args: None)
         notify('Loading models / preparing 2K')
         models = models or self._models(base_model, text_encoder, video_vae, audio_vae, regenerate_lora)
@@ -193,19 +201,24 @@ class MuseProgressiveUpscaler:
                        sigmas=torch.tensor(sigmas), latent_image=av)[0]
         notify('Decoding 2K preview')
         frames = decode(sampled, models['vae'])
+        if lock:   # [2026-11-22] colour back to the source (the 4K stage then starts from the corrected 2K too)
+            frames = colour_lock(frames, source)
         notify('2K completed', frames)
         base_seconds = time.perf_counter() - started
         final = ExecutionBlocker(None)
         tile_report = None
+        sigmas_4k = sigmas if strength_4K not in PRESETS else PRESETS[strength_4K]
         if output != '2K only':
             stage = {'latent': sampled, 'reference_frames': frames, 'conditioning': conditioning,
                      'models': models, 'seed': seed, 'final_size': final_size, 'clean_start': True,
-                     'preservation_prompt': preservation_prompt, 'refine_sigmas': sigmas, 'progress_callback': notify}
+                     'preservation_prompt': preservation_prompt, 'refine_sigmas': sigmas_4k, 'progress_callback': notify}
             final, tile_report = Light4K().run(stage, 128)
+            if lock:
+                final = colour_lock(final, source)
             final = final[:count]
             notify('4K completed', final)
         report = {'method': 'Standard Regenerate + sequential four-tile 4K', 'preset': strength,
-                  'sigmas_both_stages': sigmas, 'seed': seed, 'frames': count, 'padded_frames': padded_count,
+                  'sigmas_2K': sigmas, 'sigmas_4K': sigmas_4k if output != '2K only' else None, 'colour_lock': bool(lock), 'seed': seed, 'frames': count, 'padded_frames': padded_count,
                   '2K_size': base_size, '4K_size': final_size if output != '2K only' else None,
                   '2K_seconds_including_setup': round(base_seconds, 3),
                   'total_seconds': round(time.perf_counter()-started, 3),

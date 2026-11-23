@@ -126,3 +126,21 @@ class Light4K(Detail4K):
 
 def resize_pixels(images,width,height):
     return comfy.utils.common_upscale(images.movedim(-1,1),width,height,'lanczos','disabled').movedim(1,-1)
+
+
+def colour_lock(frames, source, cell=32, batch=8):
+    """[2026-11-22] Andy: the Regenerate pass drifted colour (darker, more magenta). Pull each frame's BROAD colour and
+    brightness back to the source: blur both to ~cell-pixel blocks of the output, add the difference. Fine detail (anything
+    smaller than a block) is untouched. frames/source: [N,H,W,C] 0..1, same frame count (source may be smaller)."""
+    import torch.nn.functional as F
+    n, h, w, _ = frames.shape
+    lw, lh = max(8, round(w / cell)), max(8, round(h / cell))
+    out = frames if frames.is_contiguous() else frames.contiguous()
+    for i in range(0, min(n, len(source)), batch):
+        f = out[i:i + batch].movedim(-1, 1).float()
+        s = source[i:i + batch, ..., :3].to(f.device).movedim(-1, 1).float()
+        low_f = F.interpolate(f, size=(lh, lw), mode='area')
+        low_s = F.interpolate(s, size=(lh, lw), mode='area')
+        diff = F.interpolate(low_s - low_f, size=(h, w), mode='bilinear', align_corners=False)
+        out[i:i + batch] = (f + diff).clamp_(0, 1).movedim(1, -1).to(out.dtype)
+    return out

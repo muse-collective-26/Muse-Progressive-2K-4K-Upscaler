@@ -116,7 +116,7 @@
       },
       "widgets_values": [
         "Both",
-        "Detailed \u00b7 0.80 (default)",
+        "Balanced \u00b7 0.60",
         42,
         "fixed",
         "minimax_h3_ref2va_pruned_int8_convrot.safetensors",

@@ -1,3 +1,14 @@
+# 0.2.0
+
+- New **strength_4K** setting: the 4K stage has its own strength (default Balanced 0.60). Before, it always reused the
+  2K strength, so the default 0.80 redrew faces and texture twice.
+- New **colour_lock** setting (on by default): the broad colour and brightness of each stage's output are pulled back to
+  the source; fine detail is unchanged.
+- Default 2K strength is now **Balanced 0.60** (was Detailed 0.80). Saved workflows keep their own setting.
+- The source is no longer padded to a multiple of 32 before resizing (it squeezed the picture ~1.8 % sideways and smeared
+  a strip along the right/bottom edge). Sizes are still rounded to 32 px, which can stretch by up to ~1 %.
+- New settings are added at the end of the node, so existing workflows keep their values.
+
 # 0.1.0
 
 - One node with 2K-only, 4K-only and Both output selection.

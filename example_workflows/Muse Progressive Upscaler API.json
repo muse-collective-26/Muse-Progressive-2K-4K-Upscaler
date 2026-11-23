@@ -16,7 +16,7 @@
     "class_type": "MuseProgressiveUpscaler",
     "inputs": {
       "output": "Both",
-      "strength": "Detailed \u00b7 0.80 (default)",
+      "strength": "Balanced \u00b7 0.60",
       "seed": 42,
       "base_model": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
       "text_encoder": "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
