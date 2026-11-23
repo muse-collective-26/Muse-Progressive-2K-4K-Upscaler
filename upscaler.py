@@ -199,8 +199,7 @@ class MuseProgressiveUpscaler:
         sampled = call('SamplerCustomAdvanced', noise=call('RandomNoise', noise_seed=seed)[0],
                        guider=guider, sampler=comfy.samplers.sampler_object('euler'),
                        sigmas=torch.tensor(sigmas), latent_image=av)[0]
-        notify('Decoding 2K preview')
-        frames = decode(sampled, models['vae'])
+        frames = decode(sampled, models['vae'], notify, '2K')   # [2026-11-23] progress per piece
         if lock:   # [2026-11-22] colour back to the source (the 4K stage then starts from the corrected 2K too)
             frames = colour_lock(frames, source)
         notify('2K completed', frames)

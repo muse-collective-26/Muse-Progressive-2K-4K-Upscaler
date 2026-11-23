@@ -1,3 +1,10 @@
+# 0.2.1
+
+- The decode step after the two refine steps now shows its progress (console, node and progress bar): "Decoding 2K - piece
+  3/7 (412 s so far)". Before, it printed nothing until it finished, so a slow decode on a 16 GB card looked frozen.
+- The decode itself is unchanged: ComfyUI's H3 video VAE already decodes in its smallest pieces (256 px tiles, one
+  17-frame clip at a time) whatever tile settings are passed.
+
 # 0.2.0
 
 - New **strength_4K** setting: the 4K stage has its own strength (default Balanced 0.60). Before, it always reused the

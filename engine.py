@@ -16,10 +16,61 @@ def call(name, **inputs):
         return cls.execute(**inputs)
     return getattr(cls(),cls.FUNCTION)(**inputs)
 
-def decode(samples,vae):
+def _decode_parts(vae,samples):
+    """[2026-11-23] How many pieces ComfyUI's H3 video VAE decodes this latent in (it tiles itself: 256 px tiles, one
+    17-frame clip at a time). None when this ComfyUI's VAE doesn't expose that (then no per-piece progress)."""
+    try:
+        model=vae.first_stage_model
+        latent=samples['samples']
+        if getattr(latent,'is_nested',False):
+            latent=latent.unbind()[0]
+        if latent.ndim!=5 or not hasattr(model,'_decode_temporal_chunks') or not hasattr(model,'_adaptive_decode'):
+            return None
+        return int(model._decode_temporal_chunks(latent.shape[2])[1]) if latent.shape[2]>1 else 1
+    except Exception:
+        return None
+
+
+def decode(samples,vae,notify=None,label='2K'):
+    """Decode the refined latent to pixels.
+    [2026-11-23] Rob (16 GB card): the decode printed nothing for 15+ minutes and looked frozen. It now reports each piece
+    (console + node + progress bar) and its time. The tile settings below are ignored by the H3 video VAE (it always
+    tiles itself, the lightest it can be), so the decode itself is unchanged."""
+    notify=notify or (lambda *args:None)
     mm.unload_all_models()
     mm.soft_empty_cache()
-    return call('VAEDecodeTiled',samples=samples,vae=vae,tile_size=512,overlap=64,temporal_size=64,temporal_overlap=8)[0]
+    began=time.perf_counter()
+    parts=_decode_parts(vae,samples)
+    model=getattr(vae,'first_stage_model',None)
+    LOG.warning('[MUSE UPSCALER] Decoding %s: %s (no console bar for this step).',label,
+                f'{parts} piece(s)' if parts else 'one pass')
+    notify(f'Decoding {label}'+(f' - piece 1/{parts}' if parts else ''))
+    original=None
+    if parts:
+        import comfy.utils
+        progress=comfy.utils.ProgressBar(parts)
+        original=model._adaptive_decode
+        done=[0]
+        def counted(*args,**kwargs):
+            out=original(*args,**kwargs)
+            done[0]+=1
+            took=time.perf_counter()-began
+            LOG.warning('[MUSE UPSCALER] Decoding %s: piece %s/%s done (%.0f s so far)',label,done[0],parts,took)
+            progress.update_absolute(min(done[0],parts))
+            if done[0]<parts:
+                notify(f'Decoding {label} - piece {done[0]+1}/{parts} ({took:.0f} s so far)')
+            return out
+        model._adaptive_decode=counted
+    try:
+        frames=call('VAEDecodeTiled',samples=samples,vae=vae,tile_size=512,overlap=64,temporal_size=64,temporal_overlap=8)[0]
+    finally:
+        if original is not None:
+            try:
+                del model._adaptive_decode   # back to the class method
+            except AttributeError:
+                model._adaptive_decode=original
+    LOG.warning('[MUSE UPSCALER] Decoding %s finished in %.0f s',label,time.perf_counter()-began)
+    return frames
 
 class Detail4K:
     @classmethod
@@ -101,8 +152,7 @@ class Detail4K:
             LOG.warning('[%s TILE %s/4] DONE %.1fs',tag,i+1,elapsed)
             progress.update_absolute(i+1)
             del sampled,refined,layered,delta,band,guider,cond,tile,before
-        notify('Decoding 4K output')
-        frames=decode({'samples':canvas},models['vae'])
+        frames=decode({'samples':canvas},models['vae'],notify,'4K')   # [2026-11-23] progress per piece
         report={'size':[fw,fh],'frames':len(frames),'detail_amount':None if light else detail_amount,'overlap_pixels':overlap_pixels,
                 'tiles':reports,'seconds_including_enlarge_decode':round(time.perf_counter()-start,3),
                 'sigmas':schedule,'reference':'restored 2K latent' if light else 'original source latent',
